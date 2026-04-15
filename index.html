@@ -40,47 +40,10 @@
             position: fixed; inset: 0; background: #0f172a; z-index: 1000;
             display: flex; justify-content: center; align-items: center; flex-direction: column;
         }
-
-
-        /* Tombol Audio Melayang */
-#audio-control {
-    position: fixed;
-    top: 20px;
-    right: 470px; /* Di sebelah kiri panel UI agar tidak tertutup */
-    z-index: 1000;
-    background: rgba(255, 159, 67, 0.2);
-    border: 1px solid var(--accent);
-    color: var(--accent);
-    border-radius: 50%;
-    width: 45px;
-    height: 45px;
-    cursor: pointer;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    transition: 0.3s;
-    backdrop-filter: blur(5px);
-}
-
-#audio-control:hover {
-    background: var(--accent);
-    color: #000;
-}
-
-/* Sembunyikan audio player asli */
-audio { display: none; }
-
-
-
-
     </style>
 </head>
 <body>
-<button id="audio-control" onclick="toggleAudio()">🔊</button>
 
-<audio id="bgm" loop>
-    <source src="Music1.mp3" type="audio/mpeg">
-</audio>
 <div id="loader">
     <h2>Membangun Lab Komputer...</h2>
     <p>Menginisialisasi Engine OpenGL & Shader Data</p>
@@ -112,12 +75,11 @@ audio { display: none; }
         </div>
         
         <div style="margin-top: 50px; font-size: 0.8rem; opacity: 0.6;">
-           
+            <p>Pengembang: <strong>Marcel Prastiko Arthana</strong></p>
+            <p>Ganesha University of Education</p>
         </div>
     </div>
 </aside>
-
-
 
 <script>
     let scene, camera, renderer, controls, clock;
@@ -151,6 +113,40 @@ audio { display: none; }
         animate();
     }
 
+    // Fungsi baru untuk membuat Label Teks 3D (Sprite)
+    function createLabel(text, scaleModifier = 1) {
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        context.font = "Bold 28px 'Segoe UI', sans-serif";
+        
+        const textWidth = context.measureText(text).width;
+        canvas.width = textWidth + 40;
+        canvas.height = 50;
+
+        // Background Label
+        context.fillStyle = "rgba(15, 23, 42, 0.85)";
+        context.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Border Label
+        context.strokeStyle = "#00d2ff";
+        context.lineWidth = 4;
+        context.strokeRect(0, 0, canvas.width, canvas.height);
+
+        // Teks Label
+        context.fillStyle = "#ffffff";
+        context.textAlign = "center";
+        context.textBaseline = "middle";
+        context.fillText(text, canvas.width / 2, canvas.height / 2 + 2);
+
+        const texture = new THREE.CanvasTexture(canvas);
+        const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
+        const sprite = new THREE.Sprite(spriteMaterial);
+        
+        // Menyesuaikan skala sprite di dunia 3D
+        sprite.scale.set(canvas.width * 0.025 * scaleModifier, canvas.height * 0.025 * scaleModifier, 1);
+        return sprite;
+    }
+
     function createLab() {
         // 1. Lantai Lab
         const floorGeo = new THREE.PlaneGeometry(30, 30);
@@ -170,6 +166,11 @@ audio { display: none; }
         hub.position.y = 1.5;
         hub.name = "router";
         scene.add(hub);
+
+        // --- TAMBAHAN: Label Server ---
+        const serverLabel = createLabel("Server / Switch", 1.2);
+        serverLabel.position.set(0, 4, 0); // Posisi melayang di atas Server
+        scene.add(serverLabel);
 
         // 4. Membuat Workstation (PC) dan Kabel
         for (let i = 0; i < PC_COUNT; i++) {
@@ -195,6 +196,11 @@ audio { display: none; }
             monitor.position.y = 1.6;
             pcGroup.add(monitor);
 
+            // --- TAMBAHAN: Label Client ---
+            const clientLabel = createLabel("Client " + (i + 1), 0.7);
+            clientLabel.position.set(0, 2.8, 0); // Melayang di atas monitor
+            pcGroup.add(clientLabel);
+
             pcGroup.position.set(x, 0, z);
             pcGroup.lookAt(0, 0, 0);
             scene.add(pcGroup);
@@ -207,6 +213,14 @@ audio { display: none; }
             const lineGeo = new THREE.BufferGeometry().setFromPoints(points);
             const line = new THREE.Line(lineGeo, lineMat);
             scene.add(line);
+
+            // --- TAMBAHAN: Label Kabel LAN ---
+            // Hanya menaruh label di satu kabel (kabel pertama) agar scene tidak terlihat terlalu penuh
+            if (i === 0) {
+                const cableLabel = createLabel("Kabel UTP (LAN)", 0.6);
+                cableLabel.position.set(x / 2, 1.2, z / 2); // Posisi di tengah-tengah garis kabel
+                scene.add(cableLabel);
+            }
 
             // Inisialisasi Paket Data
             createDataPacket(x, z);
@@ -269,34 +283,8 @@ audio { display: none; }
     });
 
     init();
-
-    const audio = document.getElementById('bgm');
-const audioBtn = document.getElementById('audio-control');
-let isPlaying = false;
-
-function toggleAudio() {
-    if (isPlaying) {
-        audio.pause();
-        audioBtn.innerHTML = "🔇"; // Icon saat mati
-        audioBtn.style.opacity = "0.5";
-    } else {
-        audio.play().catch(e => console.log("Klik layar dulu untuk memulai musik"));
-        audioBtn.innerHTML = "🔊"; // Icon saat nyala
-        audioBtn.style.opacity = "1";
-    }
-    isPlaying = !isPlaying;
-}
-
-// Otomatis putar saat user pertama kali klik di mana saja (solusi blokir browser)
-document.addEventListener('click', () => {
-    if(!isPlaying) {
-        audio.play();
-        isPlaying = true;
-        audioBtn.innerHTML = "🔊";
-    }
-}, { once: true });
-
-
 </script>
+
+
 </body>
 </html>
